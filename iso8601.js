@@ -1,5 +1,26 @@
 ;
-var iso8601 = (function() {
+/*
+ * JavaScript library for ISO-8601 datetime format.
+ * Copyright: 2009, Shumpei Shiraishi (shumpei.shiraishi at gmail.com)
+ * License: GNU General Public License, Free Software Foundation
+ *          <http://creativecommons.org/licenses/GPL/2.0/>
+ * Original code and license is:
+ *   Web Forms 2.0 Cross-browser Implementation <http://code.google.com/p/webforms2/>
+ *   Copyright: 2007, Weston Ruter <http://weston.ruter.net/>
+ *   License: GNU General Public License, Free Software Foundation
+ *          <http://creativecommons.org/licenses/GPL/2.0/>
+ *
+ * Usage:
+ *   Load:     <script type="text/javascript" src="iso8601.js"></script>
+ *   Parse:    iso8601.parse(dateStr, type);
+ *   Format:   iso8601.format(date, type);
+ *   Validate: iso8601.validate(dateStr, type);
+ *   "type" parameter can be one of follows: date/time/datetime/datetime-local/week/month
+ */
+var isodate = (function() {
+    //Initially inspired by Paul Sowden <http://delete.me.uk/2005/03/iso8601.html>
+    var PATTERN =  /^(?:(\d\d\d\d)-(W(0[1-9]|[1-4]\d|5[0-2])|(0\d|1[0-2])(-(0\d|[1-2]\d|3[0-1])(T(0\d|1\d|2[0-4]):([0-5]\d)(:([0-5]\d)(\.(\d+))?)?(Z)?)?)?)|(0\d|1\d|2[0-4]):([0-5]\d)(:([0-5]\d)(\.(\d+))?)?)$/;
+
     function zeroPad(num, pad){
 	if(!pad)
 	    pad = 2;
@@ -9,12 +30,9 @@ var iso8601 = (function() {
 	return str;
     }
     return {
-	//Initially inspired by Paul Sowden <http://delete.me.uk/2005/03/iso8601.html>
-	PATTERN:  /^(?:(\d\d\d\d)-(W(0[1-9]|[1-4]\d|5[0-2])|(0\d|1[0-2])(-(0\d|[1-2]\d|3[0-1])(T(0\d|1\d|2[0-4]):([0-5]\d)(:([0-5]\d)(\.(\d+))?)?(Z)?)?)?)|(0\d|1\d|2[0-4]):([0-5]\d)(:([0-5]\d)(\.(\d+))?)?)$/,
-	
 	validate: function(value, type){ //returns RegExp matches
 	    var isValid = false;
-	    var d = this.PATTERN.exec(value); //var d = string.match(new RegExp(regexp));
+	    var d = PATTERN.exec(value); //var d = string.match(new RegExp(regexp));
 	    if(!d || !type)
 		return d;
 	    type = type.toLowerCase();
@@ -46,6 +64,9 @@ var iso8601 = (function() {
 	    return isValid ? d : null;
 	},
 	parse: function(str, type) {
+	    if (!str) {
+		return null;
+	    }
 	    var d = this.validate(str, type);
 	    if(!d)
 		return null;
@@ -63,7 +84,7 @@ var iso8601 = (function() {
 		if(d[3]){
 		    if(type && type != 'week')
 			return null;
-		    date.setUTCDate(date.getUTCDate() + ((8 - date.getUTCDay()) % 7) + (d[3]-1)*7); //set week day and week
+		    date.setUTCDate(date.getUTCDate() - (7 - date.getUTCDay()) + (d[3]-1)*7); //set week day and week
 		    return date;
 		}
 		//Other date-related types
@@ -86,6 +107,9 @@ var iso8601 = (function() {
 	    return date;
 	},
 	format: function(date, type){
+	    if (!date) {
+		return null;
+	    }
 	    type = String(type).toLowerCase();
 	    var ms = '';
 	    if(date.getUTCMilliseconds())
@@ -95,18 +119,18 @@ var iso8601 = (function() {
 		return date.getUTCFullYear() + '-' + zeroPad(date.getUTCMonth()+1) + '-' + zeroPad(date.getUTCDate());
 	    case 'datetime-local':
 		return date.getFullYear() + '-' + zeroPad(date.getMonth()+1) + '-' + zeroPad(date.getDate()) + 
-		    'T' + zeroPad(date.getHours()) + ':' + zeroPad(date.getMinutes()) + ':' + zeroPad(date.getMinutes()) + ms + 'Z';
+		    'T' + zeroPad(date.getHours()) + ':' + zeroPad(date.getMinutes()) + ':' + zeroPad(date.getSeconds()) + ms + 'Z';
 	    case 'month':
 		return date.getUTCFullYear() + '-' + zeroPad(date.getUTCMonth()+1);
 	    case 'week':
 		var week1 = this.parse(date.getUTCFullYear() + '-W01');
-		return date.getUTCFullYear() + '-W' + zeroPad(((date.valueOf() - week1.valueOf()) / (7*24*60*60*1000)) + 1);
+		return date.getUTCFullYear() + '-W' + zeroPad(Math.floor(((date.valueOf() - week1.valueOf()) / (7*24*60*60*1000))) + 1);
 	    case 'time':
-		return zeroPad(date.getUTCHours()) + ':' + zeroPad(date.getUTCMinutes()) + ':' + zeroPad(date.getUTCMinutes()) + ms;
+		return zeroPad(date.getUTCHours()) + ':' + zeroPad(date.getUTCMinutes()) + ':' + zeroPad(date.getUTCSeconds()) + ms;
 	    case 'datetime':
 	    default:
 		return date.getUTCFullYear() + '-' + zeroPad(date.getUTCMonth()+1) + '-' + zeroPad(date.getUTCDate()) + 
-		    'T' + zeroPad(date.getUTCHours()) + ':' + zeroPad(date.getUTCMinutes()) + ':' + zeroPad(date.getUTCMinutes()) + ms + 'Z';
+		    'T' + zeroPad(date.getUTCHours()) + ':' + zeroPad(date.getUTCMinutes()) + ':' + zeroPad(date.getUTCSeconds()) + ms + 'Z';
 	    }
 	}
     };
